@@ -907,52 +907,55 @@ def get_scraped_jobs(role_name: str, location: str = "India", limit: int = 5, li
         if live and SCRAPING_ENABLED:
             logger.info(f"[Live Scrape] Starting for {role_name} in {location}")
             try:
-                from scrapers.browser_scraper import BrowserScraper
                 from scrapers.jd_scraper import JobDataAggregator
+                from dataclasses import asdict
                 aggregator = JobDataAggregator()
-                with BrowserScraper(headless=True) as browser:
-                    raw_jobs = browser.scrape_all(role_name, location, limit_per_source=limit)
+                snapshot = aggregator.aggregate(role=role_name, location=location, jobs_per_source=limit)
 
-                if raw_jobs:
-                    snapshot = aggregator._build_snapshot(
-                        role=role_name,
-                        location=location,
-                        jobs=raw_jobs,
-                        sources=list(set(j.source for j in raw_jobs)),
-                        uncertainty_flags=[],
-                    )
-                    from dataclasses import asdict
-                    jobs_data = [asdict(j) for j in raw_jobs]
-                    for j in jobs_data:
-                        if j.get("salary_lpa") and isinstance(j["salary_lpa"], tuple):
-                            j["salary_lpa"] = list(j["salary_lpa"])
-                        if j.get("experience_months") and isinstance(j["experience_months"], tuple):
-                            j["experience_months"] = list(j["experience_months"])
+                if snapshot and snapshot.total_jobs_scraped > 0:
+                    jobs_data = []
+                    for j in (snapshot.top_skills or []):
+                        pass  # snapshot doesn't store raw jobs — use HTTP scrapers directly
+                    # Re-run HTTP scrapers to get raw job objects
+                    raw_jobs = []
+                    for scraper in aggregator.sources.values():
+                        try:
+                            raw_jobs.extend(scraper.search_jobs(role_name, location, limit=limit))
+                        except Exception:
+                            pass
 
-                    try:
-                        db.save_market_snapshot(role_name, location, {
-                            "jobs": jobs_data,
-                            "salary_range_lpa": list(snapshot.salary_range_lpa) if snapshot.salary_range_lpa else None,
-                            "experience_range_months": list(snapshot.experience_range_months),
-                            "top_skills": [[s, c] for s, c in snapshot.top_skills],
-                            "top_companies": snapshot.top_companies,
-                            "hiring_volume_indicator": snapshot.hiring_volume_indicator,
-                            "data_quality_score": snapshot.data_quality_score,
-                            "uncertainty_flags": snapshot.uncertainty_flags,
-                        })
-                    except Exception as cache_err:
-                        logger.warning(f"Failed to save live scrape to cache: {cache_err}")
+                    if raw_jobs:
+                        jobs_data = [asdict(j) for j in raw_jobs]
+                        for j in jobs_data:
+                            if j.get("salary_lpa") and isinstance(j["salary_lpa"], tuple):
+                                j["salary_lpa"] = list(j["salary_lpa"])
+                            if j.get("experience_months") and isinstance(j["experience_months"], tuple):
+                                j["experience_months"] = list(j["experience_months"])
 
-                    job_listings, sources_used = _build_job_listings(jobs_data, limit)
-                    return JobsResponse(
-                        role=role_name,
-                        location=location,
-                        total_jobs=len(job_listings),
-                        jobs=job_listings,
-                        scraped_at=datetime.now().isoformat(),
-                        sources_used=sources_used,
-                        note=f"Live scrape complete: {len(job_listings)} jobs from {', '.join(sources_used)}.",
-                    )
+                        try:
+                            db.save_market_snapshot(role_name, location, {
+                                "jobs": jobs_data,
+                                "salary_range_lpa": list(snapshot.salary_range_lpa) if snapshot.salary_range_lpa else None,
+                                "experience_range_months": list(snapshot.experience_range_months),
+                                "top_skills": [[s, c] for s, c in snapshot.top_skills],
+                                "top_companies": snapshot.top_companies,
+                                "hiring_volume_indicator": snapshot.hiring_volume_indicator,
+                                "data_quality_score": snapshot.data_quality_score,
+                                "uncertainty_flags": snapshot.uncertainty_flags,
+                            })
+                        except Exception as cache_err:
+                            logger.warning(f"Failed to save live scrape to cache: {cache_err}")
+
+                        job_listings, sources_used = _build_job_listings(jobs_data, limit)
+                        return JobsResponse(
+                            role=role_name,
+                            location=location,
+                            total_jobs=len(job_listings),
+                            jobs=job_listings,
+                            scraped_at=datetime.now().isoformat(),
+                            sources_used=sources_used,
+                            note=f"Live scrape complete: {len(job_listings)} jobs from {', '.join(sources_used)}.",
+                        )
             except Exception as scrape_err:
                 logger.warning(f"Live scrape failed, falling back to mock data: {scrape_err}")
 
