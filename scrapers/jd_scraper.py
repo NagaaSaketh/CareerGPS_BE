@@ -17,7 +17,6 @@ from .linkedin_scraper import LinkedInScraper
 from .indeed_scraper import IndeedScraper
 from .naukri_scraper import NaukriScraper
 from .glassdoor_scraper import GlassdoorScraper
-from .browser_scraper import BrowserScraper
 
 logger = logging.getLogger(__name__)
 
@@ -88,7 +87,6 @@ class JobDataAggregator:
         role: str,
         location: str = "India",
         jobs_per_source: int = 8,
-        use_browser: bool = True,
     ) -> MarketSnapshot:
         """
         Scrape all configured sources and aggregate into a MarketSnapshot.
@@ -100,40 +98,19 @@ class JobDataAggregator:
 
         logger.info(f"[Aggregator] Starting aggregation for '{role}' in '{location}'")
 
-        # Try browser-based scraping first (much more reliable)
-        if use_browser:
-            browser = None
+        # Use HTTP scrapers
+        for name, scraper in self.sources.items():
             try:
-                browser = BrowserScraper(headless=True)
-                browser_jobs = browser.scrape_all(role, location, limit_per_source=jobs_per_source)
-                if browser_jobs:
-                    all_jobs.extend(browser_jobs)
-                    active_sources.extend(list(set(j.source for j in browser_jobs)))
-                    logger.info(f"[Aggregator] Browser scraper: {len(browser_jobs)} total jobs")
+                jobs = scraper.search_jobs(role, location, limit=jobs_per_source)
+                if jobs:
+                    all_jobs.extend(jobs)
+                    active_sources.append(name)
+                    logger.info(f"[Aggregator] {name}: {len(jobs)} jobs")
+                else:
+                    uncertainty_flags.append(f"{name}_no_data: No jobs returned (may be blocked or no listings)")
             except Exception as e:
-                logger.warning(f"[Aggregator] Browser scraper failed: {e}")
-                uncertainty_flags.append(f"browser_error: {str(e)}")
-            finally:
-                if browser:
-                    try:
-                        browser.close()
-                    except Exception as close_err:
-                        logger.warning(f"[Aggregator] Browser cleanup error: {close_err}")
-
-        # Fallback to HTTP scrapers if browser got nothing
-        if not all_jobs:
-            for name, scraper in self.sources.items():
-                try:
-                    jobs = scraper.search_jobs(role, location, limit=jobs_per_source)
-                    if jobs:
-                        all_jobs.extend(jobs)
-                        active_sources.append(name)
-                        logger.info(f"[Aggregator] {name}: {len(jobs)} jobs")
-                    else:
-                        uncertainty_flags.append(f"{name}_no_data: No jobs returned (may be blocked or no listings)")
-                except Exception as e:
-                    logger.error(f"[Aggregator] {name} scraper failed: {e}")
-                    uncertainty_flags.append(f"{name}_error: Scraper failed - {str(e)}")
+                logger.error(f"[Aggregator] {name} scraper failed: {e}")
+                uncertainty_flags.append(f"{name}_error: Scraper failed - {str(e)}")
 
         if not all_jobs:
             logger.warning("[Aggregator] No jobs scraped from any source.")
