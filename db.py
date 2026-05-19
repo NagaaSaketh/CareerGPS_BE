@@ -179,9 +179,11 @@ def get_reports(user_id: str, limit: int = 10) -> List[dict]:
 def save_checkin(user_id: str, week: int, data: dict) -> None:
     """Upsert a weekly check-in."""
     supabase = get_supabase()
+    cycle = data.get("cycle", 1)
     payload = {
         "user_id": user_id,
         "week": week,
+        "cycle": cycle,
         "tasks_completed": data.get("tasks_completed", []),
         "applications_sent": data.get("applications_sent", 0),
         "responses_received": data.get("responses_received", 0),
@@ -200,25 +202,24 @@ def save_checkin(user_id: str, week: int, data: dict) -> None:
     if task_hours is not None:
         payload["task_hours"] = task_hours
 
-    # Upsert keyed on (user_id, week, target_role) so different roles never overwrite each other.
-    # The DB must have: UNIQUE(user_id, week, target_role)
+    # Upsert keyed on (user_id, target_role, cycle, week)
     try:
-        supabase.table("checkins").upsert(payload, on_conflict="user_id,week,target_role").execute()
+        supabase.table("checkins").upsert(payload, on_conflict="user_id,target_role,cycle,week").execute()
         return
     except Exception as e:
         err_str = str(e).lower()
         if not any(k in err_str for k in ("unique", "conflict", "constraint", "column", "does not exist")):
             raise
-        logger.warning(f"upsert on (user_id,week,target_role) failed: {e}")
+        logger.warning(f"upsert on (user_id,target_role,cycle,week) failed: {e}")
 
-    # Fallback: try delete-then-insert to avoid stale-constraint issues
+    # Fallback: delete-then-insert
     try:
-        target_role = data.get("target_role")
         q = (
             supabase.table("checkins")
             .delete()
             .eq("user_id", user_id)
             .eq("week", week)
+            .eq("cycle", cycle)
         )
         if target_role:
             q = q.eq("target_role", target_role)

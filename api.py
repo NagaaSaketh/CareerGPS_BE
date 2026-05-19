@@ -122,6 +122,7 @@ class TaskHoursInput(BaseModel):
 
 class WeeklyCheckinRequest(BaseModel):
     week: int = Field(..., ge=1, le=52)
+    cycle: int = Field(default=1, ge=1)
     tasks_completed: List[str] = Field(default_factory=list)
     applications_sent: int = Field(default=0, ge=0)
     responses_received: int = Field(default=0, ge=0)
@@ -192,6 +193,7 @@ class AnalysisResponse(BaseModel):
 class WeeklyCheckinResponse(BaseModel):
     checkin_report: str
     week: int
+    cycle: int = 1
     progress_type: str = ""
     recommendation: str = ""
     red_flags: List[str] = []
@@ -703,6 +705,7 @@ async def weekly_checkin(checkin: WeeklyCheckinRequest, auth_user: dict = Depend
 
         # Persist to Supabase
         db.save_checkin(user_id, checkin.week, {
+            "cycle": checkin.cycle,
             "tasks_completed": checkin.tasks_completed,
             "applications_sent": checkin.applications_sent,
             "responses_received": checkin.responses_received,
@@ -719,6 +722,7 @@ async def weekly_checkin(checkin: WeeklyCheckinRequest, auth_user: dict = Depend
         return WeeklyCheckinResponse(
             checkin_report=result["checkin_text"],
             week=checkin.week,
+            cycle=checkin.cycle,
             progress_type=result["progress_type"],
             recommendation=result["recommendation"],
             red_flags=result["red_flags"],
