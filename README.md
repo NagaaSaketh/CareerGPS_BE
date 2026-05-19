@@ -2,11 +2,6 @@
 
 **Evidence-Based Career Navigation API — 29+ Career Paths**
 
-[![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![FastAPI](https://img.shields.io/badge/fastapi-0.104+-green.svg)](https://fastapi.tiangolo.com)
-[![Anthropic](https://img.shields.io/badge/Claude-Anthropic-orange.svg)](https://anthropic.com)
-[![Supabase](https://img.shields.io/badge/Supabase-Postgres-3ECF8E.svg)](https://supabase.com)
-
 ---
 
 ## What This Is
