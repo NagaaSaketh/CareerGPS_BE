@@ -116,7 +116,8 @@ class CareerGPS:
                        responses_received: int = 0,
                        interviews_attended: int = 0,
                        previous_state: dict = None,
-                       task_inputs: dict = None) -> dict:
+                       task_inputs: dict = None,
+                       cycle: int = 1) -> dict:
         """
         Process weekly check-in.
         Accepts previous state (paths, target_role, weekly_reports) and returns check-in data.
@@ -156,7 +157,7 @@ class CareerGPS:
         # Generate next week's tasks (role-specific + input-adaptive)
         current_path = paths[0] if paths else None
         next_tasks = tracker.generate_next_week_tasks(
-            week, current_path, weekly_reports + [report], target_role
+            week, current_path, weekly_reports + [report], target_role, cycle=cycle
         )
 
         # Synthesize check-in report

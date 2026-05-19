@@ -417,11 +417,12 @@ class ProgressTracker:
 
         return None
 
-    def _get_week_theme(self, week: int, role_skills: List[str]) -> tuple:
+    def _get_week_theme(self, week: int, role_skills: List[str], cycle: int = 1) -> tuple:
         """
         Determine the theme for a given week using a 6-week cycle.
         Returns (theme_id, title, description, expected_outcome, target_skill).
         Skills rotate across cycles so users don't see the same tasks repeatedly.
+        cycle=1 → foundational tasks; cycle=2+ → production-grade tasks.
         """
         n_skills = len(role_skills)
         cycle_index = week // 6  # which 6-week block we're in
@@ -432,6 +433,7 @@ class ProgressTracker:
         skill_c = role_skills[(cycle_index * 3 + 2) % n_skills] if n_skills else "advanced"
 
         cycle_pos = week % 6
+        build_on = f" Apply patterns from Cycle {cycle - 1} — raise the bar on code quality and test coverage." if cycle > 1 else ""
 
         if cycle_pos == 1:
             if week == 1:
@@ -442,62 +444,87 @@ class ProgressTracker:
                     "Working repo with README and setup instructions",
                     skill_a,
                 )
-            else:
-                return (
-                    "setup",
-                    "Set up a new project or major refactor",
-                    "Start a new project or refactor the existing codebase. Apply learnings from the previous cycle to improve architecture and organization.",
-                    "New repo or refactored codebase with clear structure",
-                    skill_a,
-                )
+            return (
+                "setup",
+                f"Launch a new {_fmt(skill_a)} project — Cycle {cycle}",
+                f"Start a more complex project with {_fmt(skill_a)} at its core.{build_on} Aim for a cleaner architecture, a CI config, and meaningful tests from day one.",
+                f"New project with {_fmt(skill_a)}, README, CI config, and at least one passing test",
+                skill_a,
+            )
         elif cycle_pos == 2:
+            complexity = "basic" if cycle == 1 else "production-grade"
             return (
                 "feature_a",
-                f"Build a core {_fmt(skill_a)} feature",
-                f"Implement a functional feature using {_fmt(skill_a)}. Write basic tests and commit incrementally.",
-                f"{_fmt(skill_a)} feature committed with basic tests",
+                f"Build a {complexity} {_fmt(skill_a)} feature",
+                f"Implement a {complexity} feature using {_fmt(skill_a)}. Write {'basic' if cycle == 1 else 'comprehensive'} tests and commit incrementally.{build_on}",
+                f"{_fmt(skill_a)} feature committed with {'basic' if cycle == 1 else 'comprehensive'} tests",
                 skill_a,
             )
         elif cycle_pos == 3:
+            if cycle == 1:
+                return (
+                    "feature_b",
+                    f"Learn {_fmt(skill_b)} fundamentals",
+                    f"Study the core concepts of {_fmt(skill_b)} and build a minimal working example. Follow official docs or a focused tutorial — no production wiring yet.",
+                    f"A basic {_fmt(skill_b)} example working locally with notes on what you learned",
+                    skill_b,
+                )
             return (
                 "feature_b",
-                f"Integrate {_fmt(skill_b)}",
-                f"Add a second core capability using {_fmt(skill_b)}. Ensure it connects cleanly with existing features.",
-                f"{_fmt(skill_b)} integration working with existing features",
+                f"Integrate {_fmt(skill_b)} with full error handling",
+                f"Wire {_fmt(skill_b)} into your existing project. Handle all failure modes, add retry logic, and document the API surface.{build_on}",
+                f"{_fmt(skill_b)} integrated with error handling and retry logic",
                 skill_b,
             )
         elif cycle_pos == 4:
+            if cycle == 1:
+                return (
+                    "quality",
+                    f"Add tests for your {_fmt(skill_a)} feature",
+                    f"Write unit tests for your {_fmt(skill_a)} implementation, handle edge cases, and add inline documentation for public functions.",
+                    f"Tests written for {_fmt(skill_a)} feature, edge cases covered, public functions documented",
+                    skill_a,
+                )
             return (
                 "quality",
-                "Add tests and documentation",
-                "Write tests for recent features, handle edge cases, and document APIs or usage patterns.",
-                "Tests written, docs added, edge cases handled",
+                f"Performance profiling and hardening ({_fmt(skill_a)})",
+                f"Profile your {_fmt(skill_a)} code for bottlenecks. Optimise the top two issues and add load or stress tests that cover edge cases.{build_on}",
+                "Profiling report, two optimisations applied, stress tests added",
                 skill_a,
             )
         elif cycle_pos == 5:
+            if cycle == 1:
+                return (
+                    "deploy",
+                    f"Deploy your {_fmt(skill_c)} project",
+                    f"Deploy the {_fmt(skill_c)} project to a live environment. Set up a basic CI/CD or automated test pipeline.",
+                    "Live deployment with automation pipeline",
+                    skill_c,
+                )
             return (
                 "deploy",
-                "Deploy and automate",
-                "Deploy the project to a live environment. Set up CI/CD or automated testing pipelines.",
-                "Live deployment with automation pipeline",
+                f"Deploy with monitoring and {_fmt(skill_c)} observability",
+                f"Re-deploy with structured logging, error alerting, and a basic {_fmt(skill_c)} health dashboard.{build_on} Simulate a failure and verify the alert fires.",
+                "Live deployment with logging, alerting, and a health dashboard",
                 skill_c,
             )
         else:  # cycle_pos == 0 (weeks 6, 12, 18...)
             return (
                 "advanced",
-                f"Build an advanced {_fmt(skill_c)} feature",
-                f"Implement a complex {_fmt(skill_c)} feature that demonstrates depth. Include error handling and edge case coverage.",
-                f"Advanced {_fmt(skill_c)} feature with error handling and edge cases",
+                f"Build a{'  complex' if cycle > 1 else ' working'} {_fmt(skill_c)} feature",
+                f"Implement a {'complex' if cycle > 1 else 'working'} {_fmt(skill_c)} feature that demonstrates understanding. Include error handling{', performance considerations,' if cycle > 1 else ''} and edge case coverage.{build_on}",
+                f"{_fmt(skill_c)} feature with error handling{', optimised paths,' if cycle > 1 else ''} and edge cases",
                 skill_c,
             )
 
     def generate_next_week_tasks(self, current_week: int,
                                 path: any,
                                 recent_reports: List[WeeklyReport],
-                                target_role: str = "") -> List[Task]:
-        """Generate next week's 3 tasks using a 6-week theme cycle + adaptive tasks 2 & 3."""
+                                target_role: str = "",
+                                cycle: int = 1) -> List[Task]:
+        """Generate next week's 3 tasks. Uses Claude for normal weeks; hardcoded
+        corrective tasks for stagnation/black-hole; template fallback if Claude fails."""
         next_week = current_week + 1
-        tasks = []
         stagnation = self.detect_stagnation(recent_reports)
 
         role_req = get_role_requirements(target_role) if target_role else None
@@ -507,134 +534,270 @@ class ProgressTracker:
         if not role_skills:
             role_skills = ["core_skill", "system_design", "problem_solving"]
 
-        current = _get_task_inputs(recent_reports[-1]) if recent_reports else {}
         current_apps = _get_market_signals(recent_reports[-1]).get("applications_sent", 0) if recent_reports else 0
         current_responses = _get_market_signals(recent_reports[-1]).get("responses_received", 0) if recent_reports else 0
         current_interviews = _get_market_signals(recent_reports[-1]).get("interviews_attended", 0) if recent_reports else 0
 
+        # --- Corrective interventions: hardcoded, not Claude-generated ---
         if stagnation and "STAGNATION" in stagnation:
-            # Force corrective: must ship something tangible
+            return [
+                Task(
+                    task_id=f"w{next_week}_project",
+                    task_type=TaskType.PROJECT,
+                    description=f"Ship one {_fmt(role_skills[0])} feature. No tutorials — build and commit working code to GitHub.",
+                    target_skill=role_skills[0],
+                    expected_outcome="Working feature committed to GitHub with README update",
+                    week=next_week
+                ),
+                Task(
+                    task_id=f"w{next_week}_apply",
+                    task_type=TaskType.APPLICATION,
+                    description=f"Apply to 3 {_fmt(target_role)} roles. Reference your project in each application.",
+                    target_skill="job_application",
+                    expected_outcome="3 applications sent with project links",
+                    week=next_week
+                ),
+                Task(
+                    task_id=f"w{next_week}_review",
+                    task_type=TaskType.NETWORKING,
+                    description="Request a code review from one industry professional. Document actionable feedback and implement at least one suggestion.",
+                    target_skill="feedback_loop",
+                    expected_outcome="Actionable feedback received, documented, and at least one item implemented",
+                    week=next_week
+                ),
+            ]
+
+        if stagnation and "BLACK HOLE" in stagnation:
+            return [
+                Task(
+                    task_id=f"w{next_week}_fix_project",
+                    task_type=TaskType.PROJECT,
+                    description=f"Fix the top 3 quality issues in your {_fmt(target_role)} portfolio repository: README, tests, and error handling.",
+                    target_skill="code_quality",
+                    expected_outcome="README complete, basic tests added, error handling improved",
+                    week=next_week
+                ),
+                Task(
+                    task_id=f"w{next_week}_resume",
+                    task_type=TaskType.PROJECT,
+                    description=f"Tailor your resume to 5 real {_fmt(target_role)} job descriptions. Match keywords exactly.",
+                    target_skill="resume_writing",
+                    expected_outcome="Resume updated with JD-matched keywords for 5 roles",
+                    week=next_week
+                ),
+                Task(
+                    task_id=f"w{next_week}_mock",
+                    task_type=TaskType.INTERVIEW_PREP,
+                    description=f"Complete one mock {_fmt(target_role)} interview and record it. Review the recording to identify your top 2 weaknesses.",
+                    target_skill="interview_skills",
+                    expected_outcome="Recording reviewed, top 2 weaknesses identified with an improvement plan",
+                    week=next_week
+                ),
+            ]
+
+        # --- Normal weeks: Claude-generated with silent fallback ---
+        try:
+            return self._generate_tasks_with_claude(
+                next_week, cycle, target_role, role_skills, recent_reports
+            )
+        except Exception as e:
+            import logging
+            logging.getLogger(__name__).warning(
+                f"Claude task generation failed (week={next_week}, cycle={cycle}): {e}. Using fallback."
+            )
+            return self._generate_fallback_tasks(
+                next_week, cycle, role_skills, target_role,
+                current_apps, current_responses, current_interviews
+            )
+
+    def _generate_tasks_with_claude(
+        self,
+        next_week: int,
+        cycle: int,
+        target_role: str,
+        role_skills: List[str],
+        recent_reports: list,
+    ) -> List[Task]:
+        """Call Claude to generate 3 role-specific, week/cycle-aware tasks. Raises on any failure."""
+        import os
+        import json as _json
+        import re as _re
+        import anthropic as _anthropic
+
+        api_key = os.environ.get("ANTHROPIC_API_KEY")
+        if not api_key:
+            raise ValueError("ANTHROPIC_API_KEY not set")
+
+        # Build checkin history string (last 4 weeks)
+        history_lines = []
+        for r in recent_reports[-4:]:
+            th = _get_task_inputs(r)
+            ms = _get_market_signals(r)
+            week_num = r.get("week", "?") if isinstance(r, dict) else getattr(r, "week", "?")
+            pt = (r.get("progress_type", "motion") if isinstance(r, dict) else getattr(r, "progress_type", "motion"))
+            history_lines.append(
+                f"Week {week_num}: learning={th.get('learning', 0)}h, "
+                f"project_tasks={th.get('project', 0)}, "
+                f"practice={th.get('practice', 0)}h, "
+                f"applications={ms.get('applications_sent', 0)}, "
+                f"responses={ms.get('responses_received', 0)}, "
+                f"interviews={ms.get('interviews_attended', 0)} "
+                f"→ {pt.replace('_', ' ').title()}"
+            )
+        history = "\n".join(history_lines) if history_lines else "No previous check-ins yet."
+
+        cycle_context = (
+            "Cycle 1 (foundational): focus on learning the basics and building working features. "
+            "Keep scope small. Applying is encouraged but volume matters less than quality of output."
+            if cycle == 1 else
+            f"Cycle {cycle} (production-grade): user has completed {cycle - 1} full 12-week cycle(s). "
+            "Raise the bar — production code quality, error handling, observability, higher application volume."
+        )
+
+        week_phase = (
+            "early weeks (1–3): project setup, first features, learning fundamentals"
+            if next_week <= 3 else
+            "mid weeks (4–8): integration, testing, documentation, consistent applying"
+            if next_week <= 8 else
+            "late weeks (9–12): deployment, polishing, interview prep, increasing application volume"
+        )
+
+        role_display = _fmt(target_role)
+        skills_display = ", ".join(_fmt(s) for s in role_skills[:8])
+
+        prompt = f"""You are a career advisor generating weekly tasks for a job seeker targeting a {role_display} role.
+
+Week: {next_week} | Cycle: {cycle} | Phase: {week_phase}
+Required skills for {role_display}: {skills_display}
+{cycle_context}
+
+Their check-in history:
+{history}
+
+Generate exactly 3 tasks for Week {next_week}. Rules:
+- Task 1: A project/build task tied to a specific skill from the {role_display} skill list above. Must be hands-on, not a tutorial.
+- Task 2: A market signal task (applying, interview prep, or profile fix) — base it on their actual application history above.
+- Task 3: A learning or practice task that targets a gap visible in their history.
+- Every task must name the role ({role_display}) or a specific skill from the list — no generic advice.
+- Tasks must be different from each other and appropriate for Week {next_week} of Cycle {cycle}.
+
+Return ONLY a valid JSON array, no explanation, no markdown:
+[
+  {{"number": 1, "title": "...", "description": "...", "expected": "..."}},
+  {{"number": 2, "title": "...", "description": "...", "expected": "..."}},
+  {{"number": 3, "title": "...", "description": "...", "expected": "..."}}
+]
+title: ≤10 words. description: 1–2 sentences. expected: one concrete deliverable."""
+
+        client = _anthropic.Anthropic(api_key=api_key)
+        response = client.messages.create(
+            model="claude-haiku-4-5-20251001",
+            max_tokens=600,
+            messages=[{"role": "user", "content": prompt}],
+        )
+
+        raw = response.content[0].text.strip()
+        # Strip markdown code fences if present
+        raw = _re.sub(r"^```[a-z]*\n?", "", raw, flags=_re.MULTILINE)
+        raw = _re.sub(r"\n?```$", "", raw, flags=_re.MULTILINE)
+        # Extract the JSON array
+        match = _re.search(r"\[.*\]", raw, _re.DOTALL)
+        if not match:
+            raise ValueError(f"No JSON array found in Claude response: {raw[:200]}")
+
+        data = _json.loads(match.group())
+        if len(data) != 3:
+            raise ValueError(f"Expected 3 tasks, got {len(data)}")
+
+        task_types = [TaskType.PROJECT, TaskType.APPLICATION, TaskType.LEARNING]
+        tasks = []
+        for i, item in enumerate(data[:3]):
             tasks.append(Task(
-                task_id=f"w{next_week}_project",
-                task_type=TaskType.PROJECT,
-                description=f"Ship one {_fmt(role_skills[0])} feature. No tutorials — build and commit working code.",
-                target_skill=role_skills[0],
-                expected_outcome="Code committed to GitHub with README update",
-                week=next_week
+                task_id=f"w{next_week}_ai_{item['number']}",
+                task_type=task_types[i],
+                description=item["description"],
+                target_skill=role_skills[i] if i < len(role_skills) else "core_skill",
+                expected_outcome=item["expected"],
+                week=next_week,
             ))
-            tasks.append(Task(
+        return tasks
+
+    def _generate_fallback_tasks(
+        self,
+        next_week: int,
+        cycle: int,
+        role_skills: List[str],
+        target_role: str,
+        current_apps: int,
+        current_responses: int,
+        current_interviews: int,
+    ) -> List[Task]:
+        """Role-specific, week/cycle-aware fallback tasks when Claude is unavailable."""
+        role_display = _fmt(target_role)
+        skill_a = role_skills[0] if role_skills else "core skill"
+        skill_b = role_skills[1] if len(role_skills) > 1 else skill_a
+        skill_c = role_skills[2] if len(role_skills) > 2 else skill_b
+        complexity = "production-grade" if cycle > 1 else "working"
+        build_note = f" Apply patterns from Cycle {cycle - 1} — raise the bar on code quality." if cycle > 1 else ""
+
+        # Task 1: role-skill-specific project task from week theme
+        theme_id, _, description, expected, target_skill = self._get_week_theme(next_week, role_skills, cycle=cycle)
+        task1 = Task(
+            task_id=f"w{next_week}_{theme_id}",
+            task_type=TaskType.PROJECT,
+            description=description,
+            target_skill=target_skill,
+            expected_outcome=expected,
+            week=next_week,
+        )
+
+        # Task 2: role-specific market signal task
+        if current_interviews > 0:
+            task2 = Task(
+                task_id=f"w{next_week}_interview",
+                task_type=TaskType.INTERVIEW_PREP,
+                description=f"Practice {_fmt(skill_a)} interview questions for {role_display} roles. Focus on areas where you felt least confident.",
+                target_skill="interview_skills",
+                expected_outcome="5 questions answered with timed responses documented",
+                week=next_week,
+            )
+        elif current_apps >= 10 and current_responses == 0:
+            task2 = Task(
+                task_id=f"w{next_week}_profile",
+                task_type=TaskType.PROJECT,
+                description=f"Audit your {role_display} resume and GitHub. Have two professionals review it and implement the top feedback.",
+                target_skill="profile_optimization",
+                expected_outcome="Top 5 resume and GitHub improvements implemented",
+                week=next_week,
+            )
+        elif current_apps == 0:
+            task2 = Task(
                 task_id=f"w{next_week}_apply",
                 task_type=TaskType.APPLICATION,
-                description="Apply to 3 roles. Reference your project in each application.",
+                description=f"Apply to 5 {role_display} positions on LinkedIn and Naukri. Reference your {_fmt(skill_b)} project in each application.",
                 target_skill="job_application",
-                expected_outcome="3 applications sent with project links",
-                week=next_week
-            ))
-            tasks.append(Task(
-                task_id=f"w{next_week}_review",
-                task_type=TaskType.NETWORKING,
-                description="Request a code review from one industry professional. Document actionable feedback.",
-                target_skill="feedback_loop",
-                expected_outcome="Actionable feedback received and documented",
-                week=next_week
-            ))
-
-        elif stagnation and "BLACK HOLE" in stagnation:
-            tasks.append(Task(
-                task_id=f"w{next_week}_fix_project",
-                task_type=TaskType.PROJECT,
-                description="Fix the top 3 issues in your repository. Focus on README, tests, and error handling.",
-                target_skill="code_quality",
-                expected_outcome="README, tests, and error handling added",
-                week=next_week
-            ))
-            tasks.append(Task(
-                task_id=f"w{next_week}_resume",
-                task_type=TaskType.PROJECT,
-                description=f"Tailor your resume to 5 job descriptions for {_fmt(target_role)} roles.",
-                target_skill="resume_writing",
-                expected_outcome="Resume updated with JD-matched keywords",
-                week=next_week
-            ))
-            tasks.append(Task(
-                task_id=f"w{next_week}_mock",
-                task_type=TaskType.INTERVIEW_PREP,
-                description="Complete one mock interview and record it. Review to identify two improvement areas.",
-                target_skill="interview_skills",
-                expected_outcome="Recording reviewed, top 2 weaknesses identified",
-                week=next_week
-            ))
-
+                expected_outcome=f"5 {role_display} applications sent with project links",
+                week=next_week,
+            )
         else:
-            # Task 1: Week-themed project task (rotating skills + progressive project)
-            theme_id, title, description, expected, target_skill = self._get_week_theme(next_week, role_skills)
-            tasks.append(Task(
-                task_id=f"w{next_week}_{theme_id}",
-                task_type=TaskType.PROJECT,
-                description=description,
-                target_skill=target_skill,
-                expected_outcome=expected,
-                week=next_week
-            ))
+            task2 = Task(
+                task_id=f"w{next_week}_apply",
+                task_type=TaskType.APPLICATION,
+                description=f"Apply to 3–5 {role_display} roles with personalized cover notes highlighting your {_fmt(skill_b)} experience.",
+                target_skill="job_application",
+                expected_outcome="Applications sent with role-specific cover notes",
+                week=next_week,
+            )
 
-            # Task 2: Adaptive application / interview / profile fix
-            if current_interviews > 0:
-                tasks.append(Task(
-                    task_id=f"w{next_week}_interview",
-                    task_type=TaskType.INTERVIEW_PREP,
-                    description=f"Practice {_fmt(role_skills[0]) if role_skills else 'technical'} interview questions. Focus on areas where you struggled in recent rounds.",
-                    target_skill="interview_skills",
-                    expected_outcome="5 questions practiced with timed responses",
-                    week=next_week
-                ))
-            elif current_apps >= 10 and current_responses == 0:
-                tasks.append(Task(
-                    task_id=f"w{next_week}_profile",
-                    task_type=TaskType.PROJECT,
-                    description="Have your resume and GitHub reviewed by two professionals. Implement the top feedback items.",
-                    target_skill="profile_optimization",
-                    expected_outcome="Top 5 improvements implemented",
-                    week=next_week
-                ))
-            elif current_apps == 0:
-                tasks.append(Task(
-                    task_id=f"w{next_week}_apply",
-                    task_type=TaskType.APPLICATION,
-                    description="Apply to 5 roles with personalized notes that reference your project.",
-                    target_skill="job_application",
-                    expected_outcome="5 applications sent with project links",
-                    week=next_week
-                ))
-            else:
-                tasks.append(Task(
-                    task_id=f"w{next_week}_apply",
-                    task_type=TaskType.APPLICATION,
-                    description="Apply to 3–5 roles with personalized cover notes.",
-                    target_skill="job_application",
-                    expected_outcome="Applications sent with project links",
-                    week=next_week
-                ))
+        # Task 3: role-specific learning task
+        practice_depth = "advanced" if cycle > 1 else "foundational"
+        task3 = Task(
+            task_id=f"w{next_week}_learn",
+            task_type=TaskType.LEARNING,
+            description=f"Study {_fmt(skill_c)} {practice_depth} concepts for 2 hours using official documentation. Build one practical {role_display} example immediately after.{build_note}",
+            target_skill=skill_c,
+            expected_outcome=f"Notes on {_fmt(skill_c)} {practice_depth} concepts, one working example committed",
+            week=next_week,
+        )
 
-            # Task 3: Adaptive practice / learning (fill the gap)
-            if current.get("practice", 0) == 0:
-                skill = role_skills[1] if len(role_skills) > 1 else "problem_solving"
-                tasks.append(Task(
-                    task_id=f"w{next_week}_practice",
-                    task_type=TaskType.PRACTICE,
-                    description=f"Solve 3 {_fmt(skill)} problems. Document your approach and optimize for efficiency.",
-                    target_skill=skill,
-                    expected_outcome="3 problems solved with optimal solutions",
-                    week=next_week
-                ))
-            else:
-                gap_skill = role_skills[2] if len(role_skills) > 2 else "fundamentals"
-                tasks.append(Task(
-                    task_id=f"w{next_week}_learn",
-                    task_type=TaskType.LEARNING,
-                    description=f"Study {_fmt(gap_skill)} for up to 2 hours. Apply the concept in a practical example immediately after.",
-                    target_skill=gap_skill,
-                    expected_outcome="Notes taken, one practical example built",
-                    week=next_week
-                ))
-
-        return tasks[:3]
+        return [task1, task2, task3]

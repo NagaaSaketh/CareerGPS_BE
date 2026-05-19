@@ -689,7 +689,8 @@ async def weekly_checkin(checkin: WeeklyCheckinRequest, auth_user: dict = Depend
             responses_received=checkin.responses_received,
             interviews_attended=checkin.interviews_attended,
             previous_state=previous_state,
-            task_inputs=task_inputs
+            task_inputs=task_inputs,
+            cycle=checkin.cycle,
         )
 
         # Serialize next_tasks for storage and response
