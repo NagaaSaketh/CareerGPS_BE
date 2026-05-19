@@ -1,0 +1,239 @@
+{
+  "fullstack_engineer__india": {
+    "role": "fullstack_engineer",
+    "location": "India",
+    "scraped_at": "2026-05-16T10:40:05.764130",
+    "sources": [
+      "linkedin",
+      "indeed"
+    ],
+    "total_jobs_scraped": 16,
+    "top_skills": [
+      [
+        "python",
+        6
+      ],
+      [
+        "react",
+        4
+      ],
+      [
+        "java",
+        2
+      ]
+    ],
+    "salary_range_lpa": [
+      0.35,
+      65.0
+    ],
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "medium",
+    "top_companies": [
+      "GreedyGame",
+      "InCred Financial Services",
+      "Fractal",
+      "BairesDev",
+      "Cloudus infotech pvt ltd\nRemote"
+    ],
+    "data_quality_score": 0.44,
+    "uncertainty_flags": [
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  },
+  "frontend_engineer__india": {
+    "role": "frontend_engineer",
+    "location": "India",
+    "scraped_at": "2026-05-14T11:28:20.466077",
+    "sources": [
+      "linkedin"
+    ],
+    "total_jobs_scraped": 8,
+    "top_skills": [],
+    "salary_range_lpa": null,
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "low",
+    "top_companies": [
+      "Deccan AI Experts",
+      "LinkedIn",
+      "Virtusa"
+    ],
+    "data_quality_score": 0.05,
+    "uncertainty_flags": [
+      "indeed_no_data: No jobs returned (may be blocked or no listings)",
+      "naukri_no_data: No jobs returned (may be blocked or no listings)",
+      "glassdoor_no_data: No jobs returned (may be blocked or no listings)",
+      "NO_SALARY_DATA: No salary info found in scraped JDs",
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  },
+  "fullstack_engineer__bangalore": {
+    "role": "fullstack_engineer",
+    "location": "bangalore",
+    "scraped_at": "2026-05-16T10:50:10.130642",
+    "sources": [
+      "indeed",
+      "glassdoor",
+      "linkedin"
+    ],
+    "total_jobs_scraped": 15,
+    "top_skills": [
+      [
+        "java",
+        4
+      ],
+      [
+        "react",
+        4
+      ],
+      [
+        "python",
+        3
+      ],
+      [
+        "agile",
+        2
+      ],
+      [
+        "angular",
+        1
+      ]
+    ],
+    "salary_range_lpa": [
+      2.0,
+      10.0
+    ],
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "medium",
+    "top_companies": [
+      "Optum\n3.4",
+      "Fractal",
+      "Boston Consulting Group\n4.2",
+      "GreedyGame",
+      "InCred Financial Services"
+    ],
+    "data_quality_score": 0.41,
+    "uncertainty_flags": [
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  },
+  "fullstack_engineer__remote": {
+    "role": "fullstack_engineer",
+    "location": "remote",
+    "scraped_at": "2026-05-14T12:01:02.943061",
+    "sources": [
+      "linkedin"
+    ],
+    "total_jobs_scraped": 8,
+    "top_skills": [],
+    "salary_range_lpa": null,
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "low",
+    "top_companies": [
+      "Fractal",
+      "GreedyGame",
+      "MeshyAI",
+      "Cloaked",
+      "PlanIT Group, LLC"
+    ],
+    "data_quality_score": 0.05,
+    "uncertainty_flags": [
+      "indeed_no_data: No jobs returned (may be blocked or no listings)",
+      "naukri_no_data: No jobs returned (may be blocked or no listings)",
+      "glassdoor_no_data: No jobs returned (may be blocked or no listings)",
+      "NO_SALARY_DATA: No salary info found in scraped JDs",
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  },
+  "frontend_engineer__bangalore": {
+    "role": "frontend_engineer",
+    "location": "bangalore",
+    "scraped_at": "2026-05-14T12:10:04.084707",
+    "sources": [
+      "linkedin"
+    ],
+    "total_jobs_scraped": 8,
+    "top_skills": [],
+    "salary_range_lpa": null,
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "low",
+    "top_companies": [
+      "Yubi",
+      "Virtusa",
+      "Deccan AI Experts",
+      "LinkedIn",
+      "Lenovo"
+    ],
+    "data_quality_score": 0.05,
+    "uncertainty_flags": [
+      "indeed_no_data: No jobs returned (may be blocked or no listings)",
+      "naukri_no_data: No jobs returned (may be blocked or no listings)",
+      "glassdoor_no_data: No jobs returned (may be blocked or no listings)",
+      "NO_SALARY_DATA: No salary info found in scraped JDs",
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  },
+  "fullstack_engineer__chennai": {
+    "role": "fullstack_engineer",
+    "location": "chennai",
+    "scraped_at": "2026-05-16T11:06:55.876595",
+    "sources": [
+      "indeed",
+      "glassdoor",
+      "linkedin"
+    ],
+    "total_jobs_scraped": 11,
+    "top_skills": [
+      [
+        "java",
+        2
+      ],
+      [
+        "javascript",
+        1
+      ],
+      [
+        "nodejs",
+        1
+      ],
+      [
+        "react",
+        1
+      ]
+    ],
+    "salary_range_lpa": [
+      6.0,
+      9.0
+    ],
+    "experience_range_months": [
+      0,
+      0
+    ],
+    "hiring_volume_indicator": "medium",
+    "top_companies": [
+      "Boston Consulting Group\n4.2",
+      "Virtusa",
+      "Forbes Advisor",
+      "Platform Science",
+      "Deccan AI Experts"
+    ],
+    "data_quality_score": 0.38,
+    "uncertainty_flags": [
+      "NO_EXPERIENCE_DATA: No experience requirements found"
+    ]
+  }
+}

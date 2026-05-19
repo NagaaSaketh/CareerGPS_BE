@@ -1,0 +1,29 @@
+services:
+  - type: web
+    name: careergps-backend
+    runtime: python
+    plan: standard
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api:app -w 2 -k uvicorn.workers.UvicornWorker --bind 0.0.0.0:$PORT --timeout 120
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.0
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: OPENAI_API_KEY
+        sync: false
+        required: false
+      - key: GITHUB_TOKEN
+        sync: false
+        required: false
+      - key: ENABLE_JD_SCRAPING
+        value: "false"
+      - key: CORS_ORIGINS
+        sync: false
+      - key: DEBUG
+        value: "false"
+    healthCheckPath: /health
