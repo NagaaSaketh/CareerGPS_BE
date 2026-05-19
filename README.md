@@ -144,7 +144,6 @@ A `max_iterations = 8` cap prevents infinite tool-call loops. In practice, 4–5
 | `/api/v1/roles/{role}` | GET | No | Get requirements for a specific role |
 | `/api/v1/market/jobs` | GET | Yes | Fetch job listings (live or mock) |
 
-Full interactive docs at `/docs` after running the server.
 
 ---
 
