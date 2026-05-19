@@ -967,7 +967,7 @@ def get_scraped_jobs(role_name: str, location: str = "India", limit: int = 5, li
                 jobs=job_listings,
                 scraped_at=snapshot.get("scraped_at", datetime.now().isoformat()),
                 sources_used=sources_used,
-                note=f"Showing cached jobs from {snapshot.get('scraped_at', 'unknown')[:10]}. Click 'Get Live Jobs' for fresh listings.",
+                note=f"Showing cached jobs from {snapshot.get('scraped_at', 'unknown')[:10]}. Click 'Scrape Jobs' for fresh listings.",
             )
 
         # Fallback: generate realistic mock jobs (deterministic per role+location)
