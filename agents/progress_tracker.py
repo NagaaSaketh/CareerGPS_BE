@@ -173,7 +173,10 @@ class ProgressTracker:
                 else:
                     break
 
-        if only_learning or (heavy_learning and pq == 0):
+        if total == 0:
+            # Nothing done at all — hardest classification
+            progress_type = ProgressType.COMPLIANCE
+        elif only_learning or (heavy_learning and pq == 0):
             progress_type = ProgressType.COMPLIANCE
         elif pq >= 2 and has_application:
             progress_type = ProgressType.BREAKTHROUGH
@@ -261,8 +264,15 @@ class ProgressTracker:
         paragraphs = []
 
         # Main progress assessment
+        total_activity = lh + prh + pq + aq
         if progress_type == ProgressType.COMPLIANCE:
-            if weeks_of_data >= 3 and prev_project == 0:
+            if total_activity == 0:
+                paragraphs.append(
+                    f"No activity recorded this week — zero learning, zero projects, zero applications. "
+                    f"Missing a week completely breaks your momentum and is hard to recover from. "
+                    f"Even one hour of focused work is better than nothing. Show up next week."
+                )
+            elif weeks_of_data >= 3 and prev_project == 0:
                 paragraphs.append(
                     f"Your inputs this week show a learning-heavy pattern. "
                     f"You spent {lh} hours learning and completed {pq} project tasks. "
