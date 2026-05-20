@@ -32,7 +32,7 @@ Input → Parser → Assessor → Mapper → Planner → Tracker → Synthesizer
 | **Evidence Assessor** | Rates skills from GitHub + resume, never self-report | Self-report > evidence + 1 = contradiction flag, evidence wins |
 | **Market Mapper** | Compares profile to aggregated JD data | Accounts for college tier bias in callback rates |
 | **Path Planner** | Generates Direct, Stepping-Stone, Alternative paths | Always includes stepping-stone for tier-2/3; framed as strategic, not a downgrade |
-| **Progress Tracker** | Classifies weekly effort — Compliance / Motion / Real Progress / Breakthrough | Cross-week detection: 2+ weeks of zero applications = downgrade from Real Progress |
+| **Progress Tracker** | Classifies weekly effort — Compliance / Motion / Real Progress / Breakthrough. Generates next week's 3 tasks via Claude (haiku), with silent fallback to role-specific templates. Supports multi-cycle tracking (12 weeks per cycle, complexity escalates each cycle). | Cross-week detection: 2+ weeks of zero applications = downgrade from Real Progress |
 | **Output Synthesizer** | One-screen report, exactly 3 tasks | Uncertainty is surfaced, never hidden |
 
 ---
@@ -138,6 +138,7 @@ A `max_iterations = 8` cap prevents infinite tool-call loops. In practice, 4–5
 | `/api/v1/roles` | GET | No | List all supported roles |
 | `/api/v1/roles/{role}` | GET | No | Get requirements for a specific role |
 | `/api/v1/market/jobs` | GET | Yes | Fetch job listings (live or mock) |
+| `/api/v1/reports/save` | POST | Yes | Save a completed AI report to Supabase |
 
 
 ---
@@ -185,6 +186,7 @@ uvicorn api:app --reload --port 8000
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Backend DB access (never expose to frontend) |
 | `SUPABASE_ANON_KEY` | Yes | Auth validation |
 | `CORS_ORIGINS` | Yes (prod) | Comma-separated allowed origins e.g. `https://careergps.vercel.app` |
+| `RAPIDAPI_KEY` | No | RapidAPI key for JSearch live job listings. Without it, mock jobs are served. |
 | `ENABLE_JD_SCRAPING` | No | Set `false` on Render free tier to prevent OOM |
 | `DEBUG` | No | Set `false` in production |
 
